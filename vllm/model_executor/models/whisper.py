@@ -843,7 +843,7 @@ class WhisperForConditionalGeneration(
             "decoder_prompt": (
                 (f"<|prev|>{request_prompt}" if request_prompt else "")
                 + f"<|startoftranscript|><|{language}|>"
-                + f"<|{task_type}|><|notimestamps|>"
+                + f"<|{task_type}|><|0.00|>"
             ),
         }
         return cast(PromptType, prompt)
