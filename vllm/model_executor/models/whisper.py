@@ -827,6 +827,7 @@ class WhisperForConditionalGeneration(
         task_type: Literal["transcribe", "translate"],
         request_prompt: str,
         to_language: str | None,
+        without_timestamp: bool
     ) -> PromptType:
         if language is None:
             raise ValueError(
@@ -841,9 +842,10 @@ class WhisperForConditionalGeneration(
                 },
             },
             "decoder_prompt": (
-                (f"<|prev|>{request_prompt}" if request_prompt else "")
+                (f"<|startofprev|>{request_prompt}" if request_prompt else "")
                 + f"<|startoftranscript|><|{language}|>"
-                + f"<|{task_type}|><|0.00|>"
+                + f"<|{task_type}|>"
+                + ("<|notimestamps|>" if without_timestamp else "<|0.00|>")
             ),
         }
         return cast(PromptType, prompt)
