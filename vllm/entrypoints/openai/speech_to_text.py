@@ -129,7 +129,7 @@ class OpenAISpeechToText(OpenAIServing):
                 task_type=self.task_type,
                 request_prompt=request.prompt,
                 to_language=to_language,
-                without_timestamp=request.without_timestamp
+                without_timestamps=request.without_timestamps
             )
             prompts.append(prompt)
         return prompts, duration

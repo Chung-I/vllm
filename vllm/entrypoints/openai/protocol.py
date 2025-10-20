@@ -2575,7 +2575,7 @@ class TranscriptionRequest(OpenAIBaseModel):
     # Flattened stream option to simplify form data.
     stream_include_usage: bool | None = False
     stream_continuous_usage_stats: bool | None = False
-    without_timestamp: bool = True
+    without_timestamps: bool = True
     vllm_xargs: dict[str, str | int | float] | None = Field(
         default=None,
         description=(
