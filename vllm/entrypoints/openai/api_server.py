@@ -63,6 +63,8 @@ from vllm.entrypoints.openai.protocol import (
     ErrorInfo,
     ErrorResponse,
     IOProcessorResponse,
+    LanguageDetectionRequest,
+    LanguageDetectionResponse,
     LoadLoRAAdapterRequest,
     PoolingRequest,
     PoolingResponse,
@@ -98,6 +100,9 @@ from vllm.entrypoints.openai.serving_tokenization import OpenAIServingTokenizati
 from vllm.entrypoints.openai.serving_transcription import (
     OpenAIServingTranscription,
     OpenAIServingTranslation,
+)
+from vllm.entrypoints.openai.serving_language_detection import (
+    OpenAIServingLanguageDetection,
 )
 from vllm.entrypoints.openai.tool_parsers import ToolParserManager
 from vllm.entrypoints.tool_server import DemoToolServer, MCPToolServer, ToolServer
@@ -351,6 +356,10 @@ def transcription(request: Request) -> OpenAIServingTranscription:
 
 def translation(request: Request) -> OpenAIServingTranslation:
     return request.app.state.openai_serving_translation
+
+
+def language_detection(request: Request) -> OpenAIServingLanguageDetection:
+    return request.app.state.openai_serving_language_detection
 
 
 def engine_client(request: Request) -> EngineClient:
@@ -892,6 +901,39 @@ async def create_translations(
         return JSONResponse(content=generator.model_dump())
 
     return StreamingResponse(content=generator, media_type="text/event-stream")
+
+
+@router.post(
+    "/v1/audio/detect_language",
+    responses={
+        HTTPStatus.BAD_REQUEST.value: {"model": ErrorResponse},
+        HTTPStatus.UNPROCESSABLE_ENTITY.value: {"model": ErrorResponse},
+        HTTPStatus.INTERNAL_SERVER_ERROR.value: {"model": ErrorResponse},
+    },
+)
+@with_cancellation
+@load_aware_call
+async def detect_language_endpoint(
+    request: Annotated[LanguageDetectionRequest, Form()], raw_request: Request
+):
+    handler = language_detection(raw_request)
+    if handler is None:
+        return base(raw_request).create_error_response(
+            message="The model does not support language detection"
+        )
+
+    audio_data = await request.file.read()
+    try:
+        result = await handler.create_language_detection(audio_data, request, raw_request)
+    except Exception as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value, detail=str(e)
+        ) from e
+
+    if isinstance(result, ErrorResponse):
+        return JSONResponse(content=result.model_dump(), status_code=result.error.code)
+
+    return JSONResponse(content=result.model_dump())
 
 
 @router.post(
@@ -1814,6 +1856,16 @@ async def init_app_state(
     )
     state.openai_serving_translation = (
         OpenAIServingTranslation(
+            engine_client,
+            state.openai_serving_models,
+            request_logger=request_logger,
+            log_error_stack=args.log_error_stack,
+        )
+        if "transcription" in supported_tasks
+        else None
+    )
+    state.openai_serving_language_detection = (
+        OpenAIServingLanguageDetection(
             engine_client,
             state.openai_serving_models,
             request_logger=request_logger,

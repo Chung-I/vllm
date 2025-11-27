@@ -2981,3 +2981,51 @@ class TranslationResponseVerbose(OpenAIBaseModel):
 
     words: list[TranslationWord] | None = None
     """Extracted words and their corresponding timestamps."""
+
+
+# Language Detection request and response objects
+class LanguageDetectionRequest(OpenAIBaseModel):
+    file: UploadFile
+    """
+    The audio file object (not file name) to detect language from, in one of
+    these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, or webm.
+    """
+
+    model: str | None = None
+    """ID of the model to use."""
+
+    top_k: int = Field(default=5, ge=1, le=20)
+    """Number of top language predictions to return (max 20)."""
+
+    temperature: float = Field(default=0.0, ge=0.0, le=2.0)
+    """The sampling temperature, between 0 and 2."""
+
+    response_format: Literal["json"] = "json"
+    """The format of the output, currently only supports `json`."""
+
+    vllm_xargs: dict[str, str | int | float] | None = Field(
+        default=None,
+        description=(
+            "Additional request parameters with string or "
+            "numeric values, used by custom extensions."
+        ),
+    )
+
+
+class LanguageDetectionItem(OpenAIBaseModel):
+    language: str
+    """The detected language in ISO-639-1 format (e.g., 'en', 'zh', 'es')."""
+
+    probability: float
+    """The probability of this language (0.0 to 1.0)."""
+
+    log_probability: float
+    """The log probability of this language."""
+
+
+class LanguageDetectionResponse(OpenAIBaseModel):
+    languages: list[LanguageDetectionItem]
+    """List of detected languages with their probabilities, sorted by probability."""
+
+    usage: TranscriptionUsageAudio
+    """Usage information for the request."""

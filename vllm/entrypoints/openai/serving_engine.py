@@ -50,6 +50,7 @@ from vllm.entrypoints.openai.protocol import (
     ErrorInfo,
     ErrorResponse,
     IOProcessorRequest,
+    LanguageDetectionRequest,
     PoolingResponse,
     RerankRequest,
     ResponsesRequest,
@@ -115,7 +116,9 @@ CompletionLikeRequest: TypeAlias = (
 ChatLikeRequest: TypeAlias = (
     ChatCompletionRequest | EmbeddingChatRequest | TokenizeChatRequest
 )
-SpeechToTextRequest: TypeAlias = TranscriptionRequest | TranslationRequest
+SpeechToTextRequest: TypeAlias = (
+    TranscriptionRequest | TranslationRequest | LanguageDetectionRequest
+)
 AnyRequest: TypeAlias = (
     CompletionLikeRequest
     | ChatLikeRequest
